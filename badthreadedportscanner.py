@@ -5,6 +5,7 @@ from datetime import datetime
 from queue import Queue
 import threading
 
+# Sort out command line args
 parser = argparse.ArgumentParser()
 parser.add_argument("host", help="The IP address or hostname of the scan target")
 parser.add_argument("mode", help="1: 1023 standardized ports, 2: All 65535 ports, 3: Common ports, 4: User selected ports")
@@ -13,6 +14,8 @@ args = parser.parse_args()
 target = args.host
 mode = int(args.mode)
 queue = Queue()
+
+# Attempt connection to specified port, returning True/False depending on result
 def scan(port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    # socket.setdefaulttimeout(1)
@@ -30,6 +33,7 @@ def scan(port):
         print("Could not connect to host.")
         sys.exit()
 
+# Set ports for scanning based on user input
 def ports(mode):
     if mode == 1:
         for port in range(1, 1024):
@@ -47,13 +51,16 @@ def ports(mode):
         ports = list(map(int, ports))
         for port in ports:
             queue.put(port)
-        
+
+
+# Get port from the queue and run a scan
 def worker():
     while not queue.empty():
         port = queue.get()
         if scan(port):
             print("Port {} is open".format(port))
 
+# Handle threaded component of the script
 def scanner(numberOfThreads, mode):
     ports(mode)
     threads = []
